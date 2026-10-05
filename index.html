@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ถอดเสียงภาษาไทย</title>
+
+    <style>
+        body {
+            font-family: Arial, "Tahoma", sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin-bottom: 25px;
+        }
+
+        #micButton {
+            width: 260px;
+            padding: 16px;
+            font-size: 20px;
+            border: none;
+            border-radius: 12px;
+            background: #1976d2;
+            color: white;
+            cursor: pointer;
+        }
+
+        #micButton:hover {
+            opacity: 0.9;
+        }
+
+        #micButton.recording {
+            background: #d32f2f;
+        }
+
+        #status {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            box-sizing: border-box;
+            padding: 15px;
+            font-size: 20px;
+            font-family: Arial, "Tahoma", sans-serif;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            resize: vertical;
+        }
+
+        #clearButton {
+            margin-top: 15px;
+            padding: 10px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #777;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎤 ถอดเสียงพูดเป็นภาษาไทย</h1>
+
+    <button id="micButton">
+        🎤 กดเพื่อพูด
+    </button>
+
+    <div id="status">
+        พร้อมรับเสียง
+    </div>
+
+    <textarea
+        id="result"
+        placeholder="ข้อความที่พูดจะปรากฏตรงนี้..."
+    ></textarea>
+
+    <br>
+
+    <button id="clearButton">
+        🗑️ ล้างข้อความ
+    </button>
+
+</div>
+
+
+<script>
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+        document.getElementById("status").innerHTML =
+            "❌ Chrome ของเครื่องนี้ไม่รองรับระบบถอดเสียง";
+
+    } else {
+
+        const recognition = new SpeechRecognition();
+
+        recognition.lang = "th-TH";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+
+        let isRecording = false;
+
+        let finalText = "";
+
+
+        const micButton =
+            document.getElementById("micButton");
+
+        const result =
+            document.getElementById("result");
+
+        const status =
+            document.getElementById("status");
+
+        const clearButton =
+            document.getElementById("clearButton");
+
+
+        micButton.addEventListener("click", function () {
+
+            console.log("กดปุ่ม");
+
+            if (isRecording) {
+
+                console.log("สั่งหยุด");
+
+                recognition.stop();
+
+            } else {
+
+                console.log("สั่งเริ่ม");
+
+                try {
+
+                    recognition.start();
+
+                } catch (error) {
+
+                    console.log(error);
+
+                }
+
+            }
+
+        });
+
+
+        recognition.onstart = function () {
+
+            console.log("เริ่มรับเสียง");
+
+            isRecording = true;
+
+            micButton.classList.add("recording");
+
+            micButton.innerHTML =
+                "⏹️ กดเพื่อหยุด";
+
+            status.innerHTML =
+                "🔴 กำลังฟัง... พูดภาษาไทยได้เลย";
+
+        };
+
+
+        recognition.onresult = function (event) {
+
+            console.log("ได้รับเสียง");
+
+            let interimText = "";
+
+
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
+                const transcript =
+                    event.results[i][0].transcript;
+
+
+                if (event.results[i].isFinal) {
+
+                    finalText += transcript + " ";
+
+                } else {
+
+                    interimText += transcript;
+
+                }
+
+            }
+
+
+            result.value =
+                finalText + interimText;
+
+        };
+
+
+        recognition.onend = function () {
+
+            console.log("หยุดรับเสียง");
+
+            isRecording = false;
+
+            micButton.classList.remove("recording");
+
+            micButton.innerHTML =
+                "🎤 กดเพื่อพูด";
+
+            status.innerHTML =
+                "พร้อมรับเสียงอีกครั้ง";
+
+        };
+
+
+        recognition.onerror = function (event) {
+
+            console.log(
+                "Speech Recognition Error:",
+                event.error
+            );
+
+
+            isRecording = false;
+
+            micButton.classList.remove("recording");
+
+            micButton.innerHTML =
+                "🎤 กดเพื่อพูด";
+
+
+            if (event.error === "not-allowed") {
+
+                status.innerHTML =
+                    "❌ Chrome ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน";
+
+            }
+
+            else if (event.error === "no-speech") {
+
+                status.innerHTML =
+                    "ไม่ได้ยินเสียง กรุณาลองพูดอีกครั้ง";
+
+            }
+
+            else {
+
+                status.innerHTML =
+                    "เกิดข้อผิดพลาด: " + event.error;
+
+            }
+
+        };
+
+
+        clearButton.addEventListener("click", function () {
+
+            finalText = "";
+
+            result.value = "";
+
+            status.innerHTML =
+                "ล้างข้อความแล้ว พร้อมรับเสียง";
+
+        });
+
+    }
+
+</script>
+
+</body>
+
+</html>
